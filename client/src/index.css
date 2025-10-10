@@ -1,0 +1,49 @@
+/* src/index.css */
+
+/* 1. Font Import (UPDATED to use 'Ubuntu' for headings) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Ubuntu:wght@400;500;700&display=swap');
+
+/* 2. Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. Your Custom Theme Variables */
+@layer base {
+  :root {
+    /* --- "TAJPE" THEME PALETTE --- */
+    --theme-primary: #305090;
+    --theme-secondary: #49C6E5;
+    --theme-primary-rgb: 48, 80, 144;
+    --theme-accent: #49C6E5;
+    /* ... (rest of your variables) ... */
+    --text-primary: #282828;
+    --text-secondary: #6c757d;
+    
+    /* --- FONT CHANGE HERE --- */
+    --primary-font: 'Ubuntu', sans-serif; /* Replaced previous font */
+    --secondary-font: 'Poppins', sans-serif;
+  }
+  
+  /* Applying base fonts */
+  html {
+    font-family: var(--secondary-font);
+    color: var(--text-primary);
+  }
+}
+
+/* -- Infinite Scroll Animations -- */
+@keyframes scroll-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+@keyframes scroll-down {
+  from { transform: translateY(-50%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes scroll-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
