@@ -20,7 +20,7 @@ const TermsAndConditionsPage = () => {
 
         <section className="bg-white rounded-2xl shadow-card border border-border-color/60 p-6 sm:p-8 lg:p-10 space-y-8 text-text-primary font-sans">
           <p>
-            Welcome to CeTutor! These Terms and Conditions ("Terms," "Agreement") govern your access to and use of the CeTutor website (the "Service") operated by [Your Company Name/Legal Entity Name] ("us," "we," or "our").
+            Welcome to CeTutor! These Terms and Conditions ("Terms," "Agreement") govern your access to and use of the CeTutor website (the "Service") operated by CeTutor ("us," "we," or "our").
           </p>
           <p>
             By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the Service.
