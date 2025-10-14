@@ -146,7 +146,7 @@ const SupportPage = () => {
                                 </div>
                                  <div className="flex items-center">
                                     <Phone className="w-6 h-6 mr-4 text-accent"/>
-                                    <span className="text-lg">(123) 456-7890 (Mon-Fri, 9am-5pm)</span>
+                                    <span className="text-lg">+91-8885783867 </span>
                                 </div>
                             </div>
                         </div>
