@@ -229,15 +229,15 @@ const PrivacyPolicyPage = () => {
               If you have any questions about this Privacy Policy, our data practices, or your rights, please contact us:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><span className="font-semibold">By Email:</span> <a href="mailto:[your support email, e.g., support@CeTutor.com]" className="text-accent hover:underline">[your support email, e.g., support@CeTutor.com]</a></li>
+              <li><span className="font-semibold">By Email:</span> <a href="mailto:[your support email, e.g., support@CeTutor.com]" className="text-accent hover:underline"> support@CeTutor.com</a></li>
               <li><span className="font-semibold">By Visiting this page on our website:</span> <a href="[Link to your contact page, e.g., /contact]" className="text-accent hover:underline">[Link to your contact page, e.g., /contact]</a></li>
               <li>
                 <span className="font-semibold">By Mail (Optional, if you have a physical address for legal/privacy inquiries):</span>
                 <ul className="list-none ml-6 space-y-1 mt-1">
-                  <li>[Your Company Name]</li>
-                  <li>[Your Company Address]</li>
-                  <li>[City, Postal Code]</li>
-                  <li>[Country]</li>
+                  <li>CeTutor</li>
+                  <li>.ULTIMATE ELECTRONICS. 10-3-6/5/A Beside Max Showroom MehdTelangana</li>
+                  <li>Hyderabad 500028 Telangana</li>
+                  <li>India</li>
                 </ul>
               </li>
             </ul>
