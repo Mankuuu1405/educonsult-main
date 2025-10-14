@@ -63,6 +63,8 @@ const Footer = () => {
                                 <Send className="w-5 h-5 transform transition-transform duration-300 group-hover:rotate-45" />
                             </button>
                         </form>
+                         <p className="text-text-on-dark/60 mb-4">Phone: +91-8885783867</p>
+                         <p className="text-text-on-dark/60 mb-4">Email: info@cetutor.com, support@cetutor.com</p>
                     </div>
                 </div>
 
