@@ -28,8 +28,11 @@ app.use(helmet());
 // 2. Enable CORS with specific origin
 // This is crucial to prevent CSRF and other cross-origin attacks
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true // Allow cookies to be sent from the frontend
+    origin: [
+        'https://www.cetutor.com',
+        'https://cetutor.com'
+    ],
+    credentials: true
 }));
 
 // 3. Cookie Parser to read cookies from the request
