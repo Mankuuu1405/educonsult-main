@@ -18,6 +18,7 @@ const Sidebar = () => {
   const navigation = [
     { name: 'Overview', href: '/', icon: HomeIcon },
     { name: 'Faculty Management', href: '/faculty', icon: UsersIcon },
+    { name: 'Student Management', href: '/students', icon: UsersIcon },
     { name: 'Withdrawal Requests', href: '/withdrawals', icon: CurrencyDollarIcon },
   ];
 

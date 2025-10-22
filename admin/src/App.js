@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Login from './components/Login';
 import MainContentA from './components/MainContentA';
 import FacultyManagement from './components/FacultyManagement';
+import StudentManagement from './components/StudentManagement';
 import WithdrawalRequests from './components/WithdrawalRequests';
 import './index.css';
 
@@ -36,6 +37,7 @@ const AppContent = () => {
             <Routes>
               <Route path="/" element={<MainContentA />} />
               <Route path="/faculty" element={<FacultyManagement />} />
+              <Route path="/students" element={<StudentManagement />} />
               <Route path="/withdrawals" element={<WithdrawalRequests />} />
             </Routes>
           </div>
