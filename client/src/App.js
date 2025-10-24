@@ -15,6 +15,7 @@ import PricingPage from './pages/PricingPage';
 import TermsAndConditionsPage from './pages/TermsAndConditionPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import { ToastProvider } from './contexts/ToastContext';
+import ChatBot from './components/ChatBot';
 
 import './index.css'; 
 
@@ -64,6 +65,9 @@ function App() {
           />
 
       </Routes>
+      
+ {/* Chatbot will be visible on all pages */}
+          <ChatBot />
     </div>
     </Router>
     </ToastProvider>

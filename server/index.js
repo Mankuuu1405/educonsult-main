@@ -11,6 +11,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import withdrawalRoutes from "./routes/withdrawalRoutes.js";
+import customChatRoute from "./routes/customChatRoute.js";
 
 import { initializeSocket } from './socket.js'; 
 import http from 'http';
@@ -72,6 +73,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/admin', adminRoutes); 
 app.use('/api/reviews', reviewRoutes); 
 app.use('/api', withdrawalRoutes); 
+app.use('/api/custom-chat',customChatRoute );
 
 
 
