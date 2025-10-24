@@ -1,12 +1,12 @@
 import Student from '../models/Student.js';
 import Faculty from '../models/Faculty.js'; // <-- THIS IS THE FIX
 import Booking from '../models/Booking.js';
-import FacultyDetail from '../models/FacultyDetail.js'; // Ensure this is also imported
+import FacultyDetail from '../models/FacultyDetail.js'; 
 import Service from '../models/Service.js';
 import mongoose from 'mongoose';
 import Setting from '../models/Setting.js';
-// @desc    Get dashboard overview statistics
-// @route   GET /api/admin/stats
+import { json } from 'express';
+
 export const getDashboardStats = async (req, res) => {
     try {
         const totalStudents = await Student.countDocuments({ isVerified: true });
@@ -25,21 +25,29 @@ export const getDashboardStats = async (req, res) => {
 
         // --- Chart Data ---
 
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
         // 1. Weekly Bookings (last 7 days)
         const weeklyBookings = await Booking.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: new Date(new Date() - 7 * 24 * 60 * 60 * 1000) },
-                    status: 'completed'
-                }
-            },
-            {
-                $group: {
-                    _id: { $dayOfWeek: '$createdAt' }, // Group by day of the week (1=Sun, 2=Mon, ...)
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { '_id': 1 } }
+                   {
+            $match: {
+                createdAt: { $gte: sevenDaysAgo }
+            }
+        },
+        // Step 2: Group documents by the day of the week and count them
+        {
+            $group: {
+                // $dayOfWeek returns a number (1=Sun, 2=Mon, ..., 7=Sat)
+                _id: { $dayOfWeek: '$createdAt' },
+                count: { $sum: 1 }
+            }
+        },
+        // Step 3: Sort by day of the week for consistency
+        {
+            $sort: { _id: 1 }
+        }
+
         ]);
         
         // 2. Monthly Student Signups (last 6 months)
@@ -58,6 +66,8 @@ export const getDashboardStats = async (req, res) => {
             },
             { $sort: { '_id': 1 } }
         ]);
+
+        
 
         res.json({
             totalStudents,
@@ -87,28 +97,31 @@ export const getFacultyList = async (req, res) => {
 // @desc    Get detailed info for a single faculty (services and booking counts)
 // @route   GET /api/admin/faculty/:id/details
 export const getFacultyDetailsForAdmin = async (req, res) => {
-    try {
-        const facultyId = req.params.id;
-        
-        // 1. Get all services provided by this faculty
-        const services = await Service.find({ faculty: facultyId }).lean(); // .lean() for a plain JS object
+    
+  const facultyDetailId = req.params._id;
 
-        // 2. For each service, count the number of completed bookings
-        const servicesWithBookingCounts = await Promise.all(
-            services.map(async (service) => {
-                const bookingsCount = await Booking.countDocuments({
-                    service: service._id,
-                    status: 'completed'
-                });
-                return { ...service, bookingsCount };
-            })
-        );
-        
-        res.json({ services: servicesWithBookingCounts });
+    // Step 1: Fetch the core faculty details
+    // Use .lean() to get a plain JavaScript object, which is faster and easier to modify
+    const facultyDetails = await FacultyDetail.findById(facultyDetailId)
+        .populate('faculty', 'fullName email')
+        .lean();
 
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error: ' + error.message });
+    if (!facultyDetails) {
+        res.status(404);
+        throw new Error('Faculty not found');
     }
+
+    // Step 2: Count the total bookings for this faculty member
+    // We use the main faculty ID (faculty._id) to match against the booking records.
+    const totalBookings = await Booking.countDocuments({ faculty: facultyDetails.faculty._id });
+
+    // Step 3: Combine the details and the booking count into a single response object
+    const responseData = {
+        ...facultyDetails,
+        totalBookings: totalBookings, // Add the new property here
+    };
+
+    res.status(200).json(responseData);
 };
 
 export const getPlatformFee = async (req, res) => {
@@ -140,4 +153,81 @@ export const setPlatformFee = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
+};
+
+//Delete functionality for faculty
+export const deleteFaculty = async (req, res) => {
+    
+    const facultyDetailId = req.params._id;
+   
+
+    // Find the faculty profile to get the associated user ID
+    try{
+        const facultyDetail = await FacultyDetail.findById(facultyDetailId);
+
+    if (!facultyDetail) {
+        res.status(404);
+        throw new Error('Faculty profile not found.');
+    }
+
+    const userId = facultyDetail.faculty; // Get the ID of the main user account
+
+    // Delete the FacultyDetail document
+   
+    // If a user is associated, delete the main User document as well
+    if (userId) {
+        await FacultyDetail.deleteOne({ _id: facultyDetailId });
+        await Faculty.deleteOne({ _id: userId });
+        
+    }
+    
+
+    // Optional Cleanup: You could also delete related bookings, services, etc.
+    // For example: await Booking.deleteMany({ faculty: userId });
+    return res.status(200).json({ message: 'Faculty member and associated user account deleted successfully.' });
+
+
+    }catch (e){
+        return res.status(500).json({message:"Internal Server Error"});
+    }
+    
+    
+};
+//to update the faculty
+
+export const updateFaculty = async (req, res) => {
+    const facultyDetailId = req.params.id;
+    const { fullName, email, title, expertiseTags, isAvailable } = req.body;
+
+    const facultyDetail = await FacultyDetail.findById(facultyDetailId);
+
+    if (!facultyDetail) {
+        res.status(404);
+        throw new Error('Faculty profile not found.');
+    }
+
+    // Find the associated User to update name and email
+    const user = await Faculty.findById(facultyDetail.faculty);
+    if (user) {
+        user.fullName = fullName || user.fullName;
+        user.email = email || user.email;
+        await user.save();
+    }
+
+    // Update the FacultyDetail document
+    facultyDetail.title = title || facultyDetail.title;
+    // Ensure expertiseTags is handled as an array
+    facultyDetail.expertiseTags = expertiseTags || facultyDetail.expertiseTags; 
+    // Handle the boolean isAvailable status
+    if (isAvailable !== undefined) {
+        facultyDetail.isAvailable = isAvailable;
+    }
+    
+    const updatedFacultyDetail = await facultyDetail.save();
+
+    // Populate the updated document to send back the full object
+    const populatedResult = await FacultyDetail.findById(updatedFacultyDetail._id)
+                                                .populate('faculty', 'fullName email');
+
+    res.status(200).json(populatedResult);
 };

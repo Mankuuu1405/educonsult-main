@@ -10,6 +10,7 @@ import studentRoutes from './routes/studentRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import withdrawalRoutes from "./routes/withdrawalRoutes.js";
 
 import { initializeSocket } from './socket.js'; 
 import http from 'http';
@@ -18,7 +19,7 @@ import helmet from 'helmet'; // <-- Import
 import sanitize from 'mongo-sanitize';
 const app = express();
 
-
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 initializeSocket(server);
 // Middleware
@@ -30,7 +31,8 @@ app.use(helmet());
 app.use(cors({
     origin: [
         'https://www.cetutor.com',
-        'https://cetutor.com'
+        'https://cetutor.com',
+        'http://localhost:3000'
     ],
     credentials: true
 }));
@@ -69,6 +71,8 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/admin', adminRoutes); 
 app.use('/api/reviews', reviewRoutes); 
+app.use('/api', withdrawalRoutes); 
+
 
 
 const PORT = process.env.PORT;

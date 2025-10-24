@@ -3,11 +3,14 @@ import Faculty from '../models/Faculty.js';
 import Student from '../models/Student.js';
 
 export const protect = async (req, res, next) => {
-    let token;
 
+    let token;
+    
+    
     // --- 1. THE FIX: Read the token ONLY from the cookie ---
     if (req.cookies.token) {
         token = req.cookies.token;
+        console.log(token);
     }
 
     // --- 2. Check if the token exists ---
@@ -38,5 +41,17 @@ export const protect = async (req, res, next) => {
     } catch (error) {
         // This will catch errors from jwt.verify if the token is invalid or expired
         res.status(401).json({ message: 'Not authorized, token failed.' });
+    }
+};
+
+export const adminOnly = (req, res, next) => {
+    // Check if the 'protect' middleware has already attached a user to the request
+    // and if that user has the 'admin' role.
+    if (req.user && req.user.role === 'admin') {
+        // If they are an admin, proceed to the next function (the controller).
+        next();
+    } else {
+        // If not an admin, send a '403 Forbidden' error.
+        res.status(403).json({ message: 'Not authorized as an admin' });
     }
 };

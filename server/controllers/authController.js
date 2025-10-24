@@ -107,18 +107,22 @@ const sendVerificationOtp = async (email) => {
 // --- AUTHENTICATION LOGIC ---
 
 const generateToken = (id, role) => {
+    console.log(process.env.JWT_SECRET)
     return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    
 };
 
 // This function will replace sending the token in the JSON body
 const sendTokenResponse = (user, statusCode, res) => {
     const token = generateToken(user._id, user.role);
+    const isProduction = process.env.NODE_ENV === 'production';
 
     const options = {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Expires in 30 days
-        httpOnly: true, // IMPORTANT: The cookie cannot be accessed by client-side JavaScript
-          secure: process.env.NODE_ENV === 'production', // Must be true for SameSite='none'
-        sameSite: 'none'
+        httpOnly: true,
+        path: '/', // IMPORTANT: The cookie cannot be accessed by client-side JavaScript
+          secure: isProduction, // Must be true for SameSite='none'
+        sameSite:  isProduction ? 'none' : 'lax'
     };
 
     // Remove password from the user object before sending
@@ -232,8 +236,11 @@ export const loginFaculty = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
+        
         const { email, password } = req.body;
+        
         const faculty = await Faculty.findOne({ email }).select('+password');
+        console.log(faculty);
 
         if (!faculty) {
             return res.status(401).json({ message: 'Invalid email or password' });
@@ -289,6 +296,7 @@ export const forgotPassword = async (req, res) => {
         const { email } = req.body;
         // Find the user in either collection
         const user = await Faculty.findOne({ email }) || await Student.findOne({ email });
+        console.log(user);
 
         // SECURITY: Always send a success response to prevent email enumeration
         if (!user) {

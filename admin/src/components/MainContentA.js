@@ -19,6 +19,7 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon
 } from '@heroicons/react/24/outline';
+import axios from 'axios';
 
 // Register Chart.js components
 ChartJS.register(
@@ -49,7 +50,16 @@ const MainContentA = () => {
       try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const result = await axios({
+          method: 'get',
+          url: 'http://localhost:5000/api/admin/stats',
         
+          user: { role: 'admin' }
+        
+        });
+   
+        console.log(result)
         setStats({
           totalStudents: 1247,
           registeredFaculty: 89,
@@ -235,7 +245,7 @@ const MainContentA = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-primary-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
@@ -246,7 +256,7 @@ const MainContentA = () => {
               <CurrencyDollarIcon className="h-8 w-8 text-primary-400" />
             </div>
           </div>
-          
+
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -256,7 +266,7 @@ const MainContentA = () => {
               <CurrencyDollarIcon className="h-8 w-8 text-green-400" />
             </div>
           </div>
-          
+
           <div className="bg-yellow-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -282,7 +292,7 @@ const MainContentA = () => {
               </div>
             </div>
           </button>
-          
+
           <button className="admin-button-secondary p-4 text-left">
             <div className="flex items-center space-x-3">
               <CurrencyDollarIcon className="h-6 w-6" />
@@ -292,7 +302,7 @@ const MainContentA = () => {
               </div>
             </div>
           </button>
-          
+
           <button className="admin-button-secondary p-4 text-left">
             <div className="flex items-center space-x-3">
               <CalendarDaysIcon className="h-6 w-6" />
