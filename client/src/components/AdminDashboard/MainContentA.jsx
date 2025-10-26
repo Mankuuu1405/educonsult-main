@@ -43,22 +43,29 @@ const MainContentA = () => {
     });
 
     const [loading, setLoading] = useState(true);
-    const token = localStorage.getItem('facultyInfo');
     const [data, setData] = useState({
     monthlySignups: [],
-    weeklyBookings: [], 
+    weeklyBookings: [],
+    setting:[], 
     totalStudents: 0,
     totalFaculty: 0,
     totalBookings: 0,
+
     // Add any other properties you expect with default values
 });
-    
+    const [revenueByCurrency, setRevenueByCurrency] = useState({ USD: 0, INR: 0 });
+
+    const [settings, setSettings] = useState(null);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+
 
     // Mock data - replace with actual API calls
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Remove the mock delay if you don't need it
+                // await new Promise(resolve => setTimeout(resolve, 1000));
 
                 const result = await axios({
                     method: 'get',
@@ -67,15 +74,39 @@ const MainContentA = () => {
                 });
                 
                 setData(result.data);
+               
+                  const settingsPromise = axios({
+                    method: 'get',
+                    url: 'http://localhost:5000/api/admin/settings/platform-fee',
+                    withCredentials: true
+                });
+
+                const [statsResult, settingsResult] = await Promise.all([result, settingsPromise]);
+
+                // --- START: New logic to process revenue ---
+                const processedRevenue = { USD: 0, INR: 0 }; // Set default values
+                if (result.data.revenueByCurrency) {
+                    result.data.revenueByCurrency.forEach(item => {
+                        // The item._id holds the currency code (e.g., "USD")
+                        // The item.total holds the amount
+                        if (processedRevenue.hasOwnProperty(item._id)) {
+                             processedRevenue[item._id] = item.total;
+                        }
+                    });
+                }
+                setRevenueByCurrency(processedRevenue);
+                // --- END: New logic to process revenue ---
                 
                 setStats({
                     totalStudents: result.data.totalStudents,
                     registeredFaculty: result.data.totalFaculty,
                     totalBookings: result.data.totalBookings,
-                    revenue: 300,
-                    platformFees: 12543
+                    revenue: processedRevenue.USD, // Set the main card to show USD revenue
+                    platformFees: 12543 // This appears to be a placeholder
                 });
+                setSettings(settingsResult.data);
                 setLoading(false);
+                
             } catch (error) {
                 console.error('Error fetching stats:', error);
                 setLoading(false);
@@ -85,18 +116,17 @@ const MainContentA = () => {
         fetchStats();
     }, []);
 
+    console.log(settings);
 
-    // Weekly bookings chart data
+    
    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     
-    // Create an array of 7 zeros. This is important!
-    // It ensures that days with no bookings are still plotted as 0.
+    
     const weeklyCounts = new Array(7).fill(0);
 
-    // Populate the array with data from the API
+    
     data.weeklyBookings.forEach(bookingData => {
-        // MongoDB's $dayOfWeek is 1-based (Sun=1, Mon=2,...).
-        // Array indices are 0-based, so we subtract 1.
+       
         const dayIndex = bookingData._id - 1;
 
         // Check if the index is valid before assigning
@@ -119,6 +149,26 @@ const MainContentA = () => {
                 fill: true,
             },
         ],
+    };
+
+
+
+    //update funciton
+    const handleUpdateSettings = async (updatedData) => {
+        try {
+            const result = await axios({
+                method: 'put',
+                url: 'http://localhost:5000/api/admin/settings/platform-fee',
+                data: updatedData,
+                withCredentials: true
+            });
+            setSettings(result.data); // Update state with the new settings from the backend
+            setIsSettingsModalOpen(false);
+            // You can add a success toast notification here
+        } catch (error) {
+            console.error('Failed to update settings:', error);
+            // You can add an error toast notification here
+        }
     };
 
 
@@ -200,6 +250,68 @@ const MainContentA = () => {
         );
     }
 
+
+    //setting model component
+    const SettingsModal = ({ isOpen, onClose, currentSettings, onSave }) => {
+    const [fee, setFee] = useState(0);
+    const [payoutDate, setPayoutDate] = useState('');
+
+    useEffect(() => {
+        if (currentSettings) {
+            setFee(currentSettings.platformFeePercentage);
+            
+            // This is the fix: Check if payoutDate exists before trying to format it
+            if (currentSettings.payoutDate) {
+                setPayoutDate(new Date(currentSettings.payoutDate).toISOString().split('T')[0]);
+            } else {
+                setPayoutDate(''); // Set to empty string if it's null
+            }
+        }
+    }, [currentSettings]);
+
+    if (!isOpen) return null;
+
+    const handleSave = () => {
+        onSave({ platformFeePercentage: fee, payoutDate });
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                <h3 className="text-lg font-bold text-admin-900 mb-4">Platform Settings</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="platformFee" className="block text-sm font-medium text-admin-700">Platform Fee Percentage (%)</label>
+                        <input
+                            type="number"
+                            id="platformFee"
+                            value={fee}
+                            onChange={(e) => setFee(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="payoutDate" className="block text-sm font-medium text-admin-700">Next Payout Date</label>
+                        <input
+                            type="date"
+                            id="payoutDate"
+                            value={payoutDate}
+                            onChange={(e) => setPayoutDate(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                </div>
+                <div className="mt-6 flex justify-end space-x-3">
+                    <button onClick={onClose} className="admin-button-secondary">Cancel</button>
+                    <button onClick={handleSave} className="admin-button-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
     return (
         <div className="space-y-6">
             {/* Page Header */}
@@ -279,16 +391,7 @@ const MainContentA = () => {
             <div className="admin-chart-container">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-admin-900">Platform Fee Tracking</h3>
-                    <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                            <p className="text-sm text-admin-600">Total Platform Fees</p>
-                            <p className="text-2xl font-bold text-primary-600">${stats.platformFees.toLocaleString()}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-sm text-admin-600">This Month</p>
-                            <p className="text-lg font-semibold text-green-600">+$2,450</p>
-                        </div>
-                    </div>
+                   
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -296,7 +399,9 @@ const MainContentA = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-primary-600">USD Revenue</p>
-                                <p className="text-xl font-bold text-primary-900">$98,450</p>
+                                <p className="text-xl font-bold text-primary-900">
+                                    ${revenueByCurrency.USD.toLocaleString()}
+                                </p>
                             </div>
                             <CurrencyDollarIcon className="h-8 w-8 text-primary-400" />
                         </div>
@@ -305,22 +410,24 @@ const MainContentA = () => {
                     <div className="bg-green-50 p-4 rounded-lg">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-green-600">INR Revenue</p>
-                                <p className="text-xl font-bold text-green-900">₹2,15,000</p>
+                               <p className="text-sm text-green-600">INR Revenue</p>
+                                <p className="text-xl font-bold text-green-900">
+                                    ₹{revenueByCurrency.INR.toLocaleString()}
+                                </p>
                             </div>
                             <CurrencyDollarIcon className="h-8 w-8 text-green-400" />
                         </div>
                     </div>
 
-                    <div className="bg-yellow-50 p-4 rounded-lg">
+                    <button onClick={() => setIsSettingsModalOpen(true)} className="bg-yellow-50 p-4 rounded-lg text-left hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-yellow-600">Platform Fee Rate</p>
-                                <p className="text-xl font-bold text-yellow-900">10%</p>
+                                <p className="text-xl font-bold text-yellow-900">{settings?.platformFeePercentage}%</p>
                             </div>
                             <ArrowTrendingUpIcon className="h-8 w-8 text-yellow-400" />
                         </div>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -335,15 +442,18 @@ const MainContentA = () => {
                                 <p className="font-medium">Manage Faculty</p>
                                 <p className="text-sm opacity-90">View and manage faculty members</p>
                             </div>
+                            
                         </div>
                     </button>
 
-                    <button className="admin-button-secondary p-4 text-left">
+                    <button onClick={() => setIsSettingsModalOpen(true)} className="admin-button-secondary p-4 text-left">
                         <div className="flex items-center space-x-3">
-                            <CurrencyDollarIcon className="h-6 w-6" />
+                            <CalendarDaysIcon className="h-6 w-6" />
                             <div>
-                                <p className="font-medium">Process Withdrawals</p>
-                                <p className="text-sm opacity-90">Review pending withdrawal requests</p>
+                                <p className="font-medium">Set Next Payout Date</p>
+                                <p className="text-sm opacity-90">
+                                    Current: {settings && settings.payoutDate ? new Date(settings.payoutDate).toLocaleDateString() : 'Not Set'}
+                                </p>
                             </div>
                         </div>
                     </button>
@@ -359,6 +469,12 @@ const MainContentA = () => {
                     </button>
                 </div>
             </div>
+            <SettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
+                currentSettings={settings}
+                onSave={handleUpdateSettings}
+            />
         </div>
     );
 };

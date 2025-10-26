@@ -19,81 +19,7 @@ const StatCard = ({ icon: Icon, title, value, color, subValue }) => (
 );
 
 const WalletBalanceCard = ({ walletData }) => {
-    const { addToast } = useToast();
     const currencySymbols = { USD: '$', INR: '₹' };
-    const newi=localStorage.getItem('facultyInfo')
-    // Note: Assuming a single currency (USD) for simplicity here.
-    // This can be expanded to handle multiple currencies like in the admin dashboard.
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [withdrawalData, setWithdrawalData] = useState({
-        amount: '',
-        currency: 'USD', // Default currency
-        paymentDetails: {
-            type: 'bank',
-            accountHolder: '',
-            accountNo: '',
-            ifsc: ''
-        }
-    });
-
-   console.log(newi)
-    const handleWithdrawalSubmit = async () => {
-     const amount = parseFloat(withdrawalData.amount);
-    if (isNaN(amount) || amount <= 0) {
-        addToast('Please enter a valid positive amount.', 'error');
-        return;
-    }
-    if (!withdrawalData.paymentDetails.accountHolder || !withdrawalData.paymentDetails.accountNo) {
-        addToast('Please fill in all payment details.', 'error');
-        return;
-    }
-
-     const walletForCurrency = walletData.find(wallet => wallet.currency === withdrawalData.currency);
-    if (!walletForCurrency || amount > walletForCurrency.amount) {
-        addToast('Insufficient Funds In Your Wallet', 'error');
-        return;
-    }
-    try {
-        // 2. Get authentication token from localStorage
-        // const { token } = JSON.parse(localStorage.getItem('facultyInfo'));
-        // if (!token) {
-        //     addToast('Authentication error. Please log in again.', 'error');
-        //     return;
-        // }
-        
-        // 3. Configure headers for the API request
-        // const config = {
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         Authorization: `Bearer ${token}`,
-        //     },
-        // };
-
-        // 4. Make the POST request to the backend
-        await axiosInstance.post(
-            '/api/faculty/withdrawals', // Your API endpoint
-            withdrawalData,               // The data from the form
-                               // The authorization headers
-        );
-
-        // 5. Handle success
-        addToast('Withdrawal request submitted successfully!', 'success');
-        setIsModalOpen(false); // Close the modal
-        // Optional: Reset the form state
-        setWithdrawalData({
-            amount: '',
-            currency: 'USD',
-            paymentDetails: { type: 'bank', accountHolder: '', accountNo: '', ifsc: '' }
-        });
-
-    } catch (error) {
-        // 6. Handle errors from the API
-        // This will display specific messages like "Insufficient funds." from your backend
-        const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
-        addToast(errorMessage, 'error');
-    }
-};
-
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-lg">
@@ -118,56 +44,9 @@ const WalletBalanceCard = ({ walletData }) => {
                         </div>
                     )}
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="mt-4 sm:mt-0 flex items-center px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700"
-                >
-                    <Download className="h-4 w-4 mr-2" />
-                    Withdraw Funds
-                </button>
+               
             </div>
-            {isModalOpen && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Request Withdrawal</h2>
-            {/* Form fields for amount, currency, payment details */}
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-600">Amount (USD)</label>
-                    <input 
-                        type="number"
-                        placeholder="e.g., 250.00"
-                        className="w-full mt-1 p-3 border rounded-lg"
-                        value={withdrawalData.amount}
-                        onChange={(e) => setWithdrawalData({...withdrawalData, amount: e.target.value})}
-                    />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Account Holder Name</label>
-                    <input 
-                        type="text"
-                        className="w-full mt-1 p-3 border rounded-lg"
-                        value={withdrawalData.paymentDetails.accountHolder}
-                        onChange={(e) => setWithdrawalData({...withdrawalData, paymentDetails: {...withdrawalData.paymentDetails, accountHolder: e.target.value}})}
-                    />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-600">Account Number</label>
-                    <input 
-                        type="text"
-                        className="w-full mt-1 p-3 border rounded-lg"
-                         value={withdrawalData.paymentDetails.accountNo}
-                        onChange={(e) => setWithdrawalData({...withdrawalData, paymentDetails: {...withdrawalData.paymentDetails, accountNo: e.target.value}})}
-                    />
-                </div>
-            </div>
-            <div className="flex justify-end space-x-4 mt-6">
-                <button onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Cancel</button>
-                <button onClick={handleWithdrawalSubmit} className="px-6 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700">Submit Request</button>
-            </div>
-        </div>
-    </div>
-)}
+            
         </div>
     );
 };

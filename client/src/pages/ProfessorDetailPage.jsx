@@ -65,6 +65,7 @@ const ProfessorDetailPage = () => {
         fetchProfessorData();
     }, [id, API_URL]);
 
+
     // GSAP Animations (unchanged)
     useLayoutEffect(() => {
         if (!loading && professor) {

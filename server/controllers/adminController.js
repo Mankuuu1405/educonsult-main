@@ -12,7 +12,7 @@ export const getDashboardStats = async (req, res) => {
         const totalStudents = await Student.countDocuments({ isVerified: true });
         const totalFaculty = await Faculty.countDocuments({ isVerified: true });
         const totalBookings = await Booking.countDocuments({ status: 'completed' });
-
+        const setting=await Setting.find({});
          const revenueByCurrency = await Booking.aggregate([
             { $match: { status: 'completed' } },
             {
@@ -75,7 +75,8 @@ export const getDashboardStats = async (req, res) => {
             totalBookings,
             revenueByCurrency, 
             weeklyBookings,
-            monthlySignups
+            monthlySignups,
+            setting
         });
     } catch (error) {
         res.status(500).json({ message: 'Server Error: ' + error.message });
@@ -122,37 +123,6 @@ export const getFacultyDetailsForAdmin = async (req, res) => {
     };
 
     res.status(200).json(responseData);
-};
-
-export const getPlatformFee = async (req, res) => {
-    try {
-        const feeSetting = await Setting.findOne({ key: 'platformFeePercentage' });
-        const fee = feeSetting ? parseFloat(feeSetting.value) : 10;
-        res.json({ platformFeePercentage: fee });
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// --- NEW FUNCTION ---
-// @desc    Update the platform fee
-// @route   PUT /api/admin/settings/platform-fee
-export const setPlatformFee = async (req, res) => {
-    try {
-        const { percentage } = req.body;
-        if (typeof percentage !== 'number' || percentage < 0 || percentage > 100) {
-            return res.status(400).json({ message: 'Invalid percentage value.' });
-        }
-        
-        const updatedSetting = await Setting.findOneAndUpdate(
-            { key: 'platformFeePercentage' },
-            { value: percentage.toString() },
-            { new: true, upsert: true }
-        );
-        res.json({ message: 'Platform fee updated successfully.', setting: updatedSetting });
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
-    }
 };
 
 //Delete functionality for faculty
@@ -230,4 +200,39 @@ export const updateFaculty = async (req, res) => {
                                                 .populate('faculty', 'fullName email');
 
     res.status(200).json(populatedResult);
+};
+
+
+
+export const getSettings = async (req, res) => {
+    
+    try {
+        let settings = await Setting.findOne();
+        // If no settings exist, create a default document
+        if (!settings) {
+            settings = await new Setting().save();
+        }
+        res.json(settings);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+export const updateSettings = async (req, res) => {
+    try {
+        const { platformFeePercentage, payoutDate } = req.body;
+
+        // Use findOneAndUpdate with upsert:true.
+        // This finds the first document and updates it, or creates it if it doesn't exist.
+        const updatedSettings = await Setting.findOneAndUpdate(
+            {}, // An empty filter will match the first document
+            { platformFeePercentage, payoutDate },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
+        );
+        console.log(updateSettings);
+
+        res.json(updatedSettings);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
 };

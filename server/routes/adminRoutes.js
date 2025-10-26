@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { getDashboardStats,getFacultyDetailsForAdmin,getFacultyList,getPlatformFee,setPlatformFee ,deleteFaculty,updateFaculty} from '../controllers/adminController.js';
+import { getDashboardStats,getFacultyDetailsForAdmin,getFacultyList ,deleteFaculty,updateFaculty,getSettings,updateSettings} from '../controllers/adminController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 // Middleware to check if the user is an admin
@@ -19,7 +19,7 @@ router.get('/faculty-list', getFacultyList);
 router.get('/faculty/:_id/details', getFacultyDetailsForAdmin);
 router.delete('/faculty/:_id', deleteFaculty);
 router.put('/faculty/:id', updateFaculty);
-router.get('/settings/platform-fee', getPlatformFee);
-router.put('/settings/platform-fee', setPlatformFee);
+router.get('/settings/platform-fee', getSettings);
+router.put('/settings/platform-fee', updateSettings);
 
 export default router;

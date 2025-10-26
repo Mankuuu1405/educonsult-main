@@ -1,17 +1,31 @@
 import mongoose from 'mongoose';
 
-const settingSchema = new mongoose.Schema({
-    key: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true,
-    },
-    value: {
-        type: String, // Stored as a string, can be parsed to number/boolean later
-        required: true,
-    },
-}, { timestamps: true });
+// Function to calculate the default payout date (one month from now)
+const getDefaultPayoutDate = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date;
+};
 
-const Setting = mongoose.model('Setting', settingSchema);
-export default Setting;
+const settingsSchema = new mongoose.Schema({
+    platformFeePercentage: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 100,
+        default: 30
+    },
+    // Add the new field for the payout date
+    payoutDate: {
+        type: Date,
+        required: true,
+        default: getDefaultPayoutDate // Use the function to set the default value
+    }
+}, {
+    timestamps: true // Adds createdAt and updatedAt timestamps
+});
+
+// The rest of the file remains the same
+const Settings = mongoose.models.Settings || mongoose.model('Settings', settingsSchema);
+
+export default Settings;

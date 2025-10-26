@@ -3,6 +3,7 @@ import Faculty from '../models/Faculty.js';
 import Student from '../models/Student.js';
 
 export const protect = async (req, res, next) => {
+   
 
     let token;
     
@@ -10,7 +11,6 @@ export const protect = async (req, res, next) => {
     // --- 1. THE FIX: Read the token ONLY from the cookie ---
     if (req.cookies.token) {
         token = req.cookies.token;
-        console.log(token);
     }
 
     // --- 2. Check if the token exists ---
@@ -36,6 +36,7 @@ export const protect = async (req, res, next) => {
         }
 
         // If everything is okay, proceed to the next middleware or the controller
+       
         next();
 
     } catch (error) {
