@@ -18,6 +18,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import ChatBot from './components/ChatBot';
 
 import './index.css'; 
+// import EditProfileF from './components/FacultyDashboard/EditProfileF';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/terms" element={<TermsAndConditionsPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        {/* <Route path="/edit-profile-f" element={<EditProfileF />} /> */}
 
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route 

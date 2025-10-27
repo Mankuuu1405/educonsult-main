@@ -10,7 +10,7 @@ import studentRoutes from './routes/studentRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
-import withdrawalRoutes from "./routes/withdrawalRoutes.js";
+// import withdrawalRoutes from "./routes/withdrawalRoutes.js";
 import customChatRoute from "./routes/customChatRoute.js";
 
 import { initializeSocket } from './socket.js'; 
@@ -72,7 +72,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/admin', adminRoutes); 
 app.use('/api/reviews', reviewRoutes); 
-app.use('/api', withdrawalRoutes); 
+// app.use('/api', withdrawalRoutes); 
 app.use('/api/custom-chat',customChatRoute );
 
 

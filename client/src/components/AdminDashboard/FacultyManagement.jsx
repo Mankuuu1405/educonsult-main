@@ -11,8 +11,11 @@ import {
   CalendarDaysIcon
 } from '@heroicons/react/24/outline';
 import axiosInstance from '../../api/axios';
+import EditProfileF from '../FacultyDashboard/EditProfileF';
+import { useNavigate } from 'react-router-dom';
 
 const FacultyManagement = () => {
+  const navigate=useNavigate();
   const [faculty, setFaculty] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -189,7 +192,7 @@ const FacultyManagement = () => {
           <p className="text-admin-600">Manage faculty members and their services</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="admin-button-primary">
+          <button onClick={()=>navigate('/edit-profile-f')} className="admin-button-primary">
             Add New Faculty
           </button>
         </div>  

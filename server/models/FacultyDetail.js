@@ -19,13 +19,16 @@ const facultyDetailSchema = new mongoose.Schema({
 
     profileImage: { type: String, default: '/default-avatar.png' }, // Store as a URL or base64 string
     
+    contactNumber: { type: String, default: '' },
+    address: { type: String, default: '' },
     financials: {
         payoutMethod: { type: String, enum: ['paypal', 'bank'], default: 'paypal' },
         paypalEmail: { type: String, default: '' },
         bankAccountName: { type: String, default: '' },
         bankAccountNumber: { type: String, default: '' },
         bankRoutingNumber: { type: String, default: '' },
-        bankIfscCode: { type: String, default: '' }, // New field
+        bankIfscCode: { type: String, default: '' },
+        branchName: { type: String, default: '' },
     },
 }, { timestamps: true });
 

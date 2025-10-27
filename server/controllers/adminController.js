@@ -6,6 +6,7 @@ import Service from '../models/Service.js';
 import mongoose from 'mongoose';
 import Setting from '../models/Setting.js';
 import { json } from 'express';
+import ExcelJS from 'exceljs';
 
 export const getDashboardStats = async (req, res) => {
     try {
@@ -234,5 +235,354 @@ export const updateSettings = async (req, res) => {
         res.json(updatedSettings);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+
+// export const exportPayments = async (req, res) => {
+//     try {
+//         console.log('Export payments requested by:', req.user.email);
+        
+//         // 1. Get platform fee percentage from settings
+//         const settings = await Setting.findOne();
+//         const platformFeePercentage = settings?.platformFeePercentage || 30;
+//         const payoutDate = settings?.payoutDate;
+
+//         // 2. Get all completed bookings for this month
+//         const startOfMonth = new Date();
+//         startOfMonth.setDate(1);
+//         startOfMonth.setHours(0, 0, 0, 0);
+
+//         const endOfMonth = new Date();
+//         endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+//         endOfMonth.setDate(0);
+//         endOfMonth.setHours(23, 59, 59, 999);
+
+//         console.log('Fetching bookings from', startOfMonth.toLocaleDateString(), 'to', endOfMonth.toLocaleDateString());
+
+//         const bookings = await Booking.find({
+//             status: 'completed',
+//             paymentStatus: 'successful',
+//             createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+//         }).populate('faculty');
+
+//         console.log('Found', bookings.length, 'completed bookings');
+
+//         // 3. Group bookings by faculty and calculate totals
+//         const facultyPayments = {};
+
+//         for (const booking of bookings) {
+//             const facultyId = booking.faculty._id.toString();
+            
+//             if (!facultyPayments[facultyId]) {
+//                 facultyPayments[facultyId] = {
+//                     facultyId: facultyId,
+//                     facultyName: booking.faculty.fullName,
+//                     email: booking.faculty.email,
+//                     totalRevenue: 0,
+//                     platformFee: 0,
+//                     payoutAmount: 0,
+//                     bookingCount: 0,
+//                     currency: booking.currencyAtBooking
+//                 };
+//             }
+
+//             // Calculate payment after platform fee
+//             const revenueAmount = booking.priceAtBooking;
+//             const feeAmount = (revenueAmount * platformFeePercentage) / 100;
+//             const payoutAmount = revenueAmount - feeAmount;
+
+//             facultyPayments[facultyId].totalRevenue += revenueAmount;
+//             facultyPayments[facultyId].platformFee += feeAmount;
+//             facultyPayments[facultyId].payoutAmount += payoutAmount;
+//             facultyPayments[facultyId].bookingCount += 1;
+//         }
+
+//         console.log('Processed payments for', Object.keys(facultyPayments).length, 'faculty members');
+
+//         // 4. Fetch faculty financial details
+//         const facultyIds = Object.keys(facultyPayments);
+//         const facultyDetails = await FacultyDetail.find({
+//             faculty: { $in: facultyIds }
+//         });
+
+//         // Create a map for quick lookup
+//         const detailsMap = {};
+//         facultyDetails.forEach(detail => {
+//             detailsMap[detail.faculty.toString()] = detail;
+//         });
+
+//         // 5. Create Excel workbook
+//         const workbook = new ExcelJS.Workbook();
+//         const worksheet = workbook.addWorksheet('Faculty Payments');
+
+//         worksheet.getCell('A1').value = 'Monthly Faculty Payment Report';
+//         worksheet.getCell('A1').font = { size: 16, bold: true };
+
+//         // Define columns
+//         worksheet.columns = [
+//             { header: 'Faculty Name', key: 'name', width: 25 },
+//             { header: 'Email', key: 'email', width: 30 },
+//             { header: 'Contact Number', key: 'contactNumber', width: 15 },
+//             { header: 'Address', key: 'address', width: 40 },
+//             { header: 'Branch Name', key: 'branchName', width: 20 },
+//             { header: 'Bookings Count', key: 'bookingCount', width: 15 },
+//             { header: 'Payout Amount', key: 'payoutAmount', width: 15 },
+//             { header: 'Currency', key: 'currency', width: 10 },
+//             { header: 'Payout Method', key: 'payoutMethod', width: 15 },
+//             { header: 'PayPal Email', key: 'paypalEmail', width: 30 },
+//             { header: 'Bank Account Name', key: 'bankAccountName', width: 25 },
+//             { header: 'Bank Account Number', key: 'bankAccountNumber', width: 20 },
+//             { header: 'Bank Routing Number', key: 'bankRoutingNumber', width: 20 },
+//             { header: 'Bank IFSC Code', key: 'bankIfscCode', width: 15 }
+//         ];
+
+//         // Style header row
+//         const headerRow = worksheet.getRow(6);
+//         headerRow.font = { bold: true };
+//         headerRow.fill = {
+//             type: 'pattern',
+//             pattern: 'solid',
+//             fgColor: { argb: 'FFE0E0E0' }
+//         };
+
+//         // Add data rows
+//         for (const [facultyId, payment] of Object.entries(facultyPayments)) {
+//             const details = detailsMap[facultyId];
+            
+//             worksheet.addRow({
+//                 name: payment.facultyName,
+//                 email: payment.email,
+//                 contactNumber: details?.contactNumber || 'N/A',
+//                 address: details?.address || 'N/A',
+//                 branchName: details?.branchName || 'N/A',
+//                 bookingCount: payment.bookingCount,
+//                 payoutAmount: payment.payoutAmount.toFixed(2),
+//                 currency: payment.currency,
+//                 payoutMethod: details?.financials?.payoutMethod || 'Not Set',
+//                 paypalEmail: details?.financials?.paypalEmail || 'N/A',
+//                 bankAccountName: details?.financials?.bankAccountName || 'N/A',
+//                 bankAccountNumber: details?.financials?.bankAccountNumber || 'N/A',
+//                 bankRoutingNumber: details?.financials?.bankRoutingNumber || 'N/A',
+//                 bankIfscCode: details?.financials?.bankIfscCode || 'N/A'
+//             });
+//         }
+
+//         if (Object.keys(facultyPayments).length === 0) {
+//             // Add a message if no payments
+//             worksheet.addRow({
+//                 name: 'No completed bookings for this month',
+//                 email: '',
+//                 bookingCount: '',
+//                 totalRevenue: '',
+//                 platformFee: '',
+//                 payoutAmount: '',
+//                 currency: '',
+//                 payoutMethod: '',
+//                 paypalEmail: '',
+//                 bankAccountName: '',
+//                 bankAccountNumber: '',
+//                 bankRoutingNumber: '',
+//                 bankIfscCode: ''
+//             });
+//         }
+
+//         // Generate buffer
+//         const buffer = await workbook.xlsx.writeBuffer();
+
+//         // Set response headers
+//         const filename = `Faculty_Payments_${startOfMonth.toISOString().slice(0, 7)}.xlsx`;
+//         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+//         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        
+//         console.log('Sending file:', filename);
+        
+//         // Send the file
+//         res.send(buffer);
+
+//     } catch (error) {
+//         console.error('Error generating payment export:', error);
+//         res.status(500).json({ 
+//             success: false, 
+//             message: 'Failed to generate payment report',
+//             error: error.message 
+//         });
+//     }
+// };
+
+
+export const exportPayments = async (req, res) => {
+    try {
+        console.log('Export payments requested by:', req.user.email);
+        
+        // 1. Get platform fee percentage from settings
+        const settings = await Setting.findOne();
+        const platformFeePercentage = settings?.platformFeePercentage || 30;
+        const payoutDate = settings?.payoutDate;
+
+        // 2. Get all completed bookings for this month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const endOfMonth = new Date();
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+        endOfMonth.setDate(0);
+        endOfMonth.setHours(23, 59, 59, 999);
+
+        console.log('Fetching bookings from', startOfMonth.toLocaleDateString(), 'to', endOfMonth.toLocaleDateString());
+
+        const bookings = await Booking.find({
+            status: 'completed',
+            paymentStatus: 'successful',
+            createdAt: { $gte: startOfMonth, $lte: endOfMonth }
+        }).populate('faculty');
+
+        console.log('Found', bookings.length, 'completed bookings');
+
+        // 3. Group bookings by faculty and calculate totals
+        const facultyPayments = {};
+
+        for (const booking of bookings) {
+            const facultyId = booking.faculty._id.toString();
+            
+            if (!facultyPayments[facultyId]) {
+                facultyPayments[facultyId] = {
+                    facultyId: facultyId,
+                    facultyName: booking.faculty.fullName,
+                    email: booking.faculty.email,
+                    totalRevenue: 0,
+                    platformFee: 0,
+                    payoutAmount: 0,
+                    bookingCount: 0,
+                    currency: booking.currencyAtBooking
+                };
+            }
+
+            // Calculate payment after platform fee
+            const revenueAmount = booking.priceAtBooking;
+            const feeAmount = (revenueAmount * platformFeePercentage) / 100;
+            const payoutAmount = revenueAmount - feeAmount;
+
+            facultyPayments[facultyId].totalRevenue += revenueAmount;
+            facultyPayments[facultyId].platformFee += feeAmount;
+            facultyPayments[facultyId].payoutAmount += payoutAmount;
+            facultyPayments[facultyId].bookingCount += 1;
+        }
+
+        console.log('Processed payments for', Object.keys(facultyPayments).length, 'faculty members');
+
+        // 4. Fetch faculty financial details
+        const facultyIds = Object.keys(facultyPayments);
+        const facultyDetails = await FacultyDetail.find({
+            faculty: { $in: facultyIds }
+        });
+
+        // Create a map for quick lookup
+        const detailsMap = {};
+        facultyDetails.forEach(detail => {
+            detailsMap[detail.faculty.toString()] = detail;
+        });
+
+        // 5. Create Excel workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Faculty Payments');
+
+        // Add title in row 1
+        worksheet.getCell('A1').value = 'Monthly Faculty Payment Report';
+        worksheet.getCell('A1').font = { size: 16, bold: true };
+        
+        // Add empty row for spacing (row 2 will be empty)
+        worksheet.addRow([]);
+
+        // Define columns (this will create row 3 as the header)
+        worksheet.columns = [
+            { header: 'Faculty Name', key: 'name', width: 25 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Contact Number', key: 'contactNumber', width: 15 },
+            { header: 'Address', key: 'address', width: 40 },
+            { header: 'Branch Name', key: 'branchName', width: 20 },
+            { header: 'Bookings Count', key: 'bookingCount', width: 15 },
+            { header: 'Payout Amount', key: 'payoutAmount', width: 15 },
+            { header: 'Currency', key: 'currency', width: 10 },
+            { header: 'Payout Method', key: 'payoutMethod', width: 15 },
+            { header: 'PayPal Email', key: 'paypalEmail', width: 30 },
+            { header: 'Account Holder Name', key: 'bankAccountName', width: 25 },
+            { header: 'Bank Account Number', key: 'bankAccountNumber', width: 20 },
+            { header: 'Bank Routing Number', key: 'bankRoutingNumber', width: 20 },
+            { header: 'Bank IFSC Code', key: 'bankIfscCode', width: 15 }
+        ];
+
+        // Style header row (row 3 after title and empty row)
+        const headerRow = worksheet.getRow(3);
+        headerRow.font = { bold: true };
+        headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add data rows
+        for (const [facultyId, payment] of Object.entries(facultyPayments)) {
+            const details = detailsMap[facultyId];
+            
+            worksheet.addRow({
+                name: payment.facultyName,
+                email: payment.email,
+                contactNumber: details?.contactNumber || 'N/A',
+                address: details?.address || 'N/A',
+                bookingCount: payment.bookingCount,
+                payoutAmount: payment.payoutAmount.toFixed(2),
+                currency: payment.currency,
+                payoutMethod: details?.financials?.payoutMethod || 'Not Set',
+                paypalEmail: details?.financials?.paypalEmail || 'N/A',
+                bankAccountName: details?.financials?.bankAccountName || 'N/A',
+                bankAccountNumber: details?.financials?.bankAccountNumber || 'N/A',
+                bankRoutingNumber: details?.financials?.bankRoutingNumber || 'N/A',
+                bankIfscCode: details?.financials?.bankIfscCode || 'N/A',
+                branchName: details?.financials?.branchName || 'N/A',
+            });
+        }
+
+        // Add message if no payments found
+        if (Object.keys(facultyPayments).length === 0) {
+            worksheet.addRow({
+                name: 'No completed bookings for this month',
+                email: '',
+                contactNumber: '',
+                address: '',
+                branchName: '',
+                bookingCount: '',
+                payoutAmount: '',
+                currency: '',
+                payoutMethod: '',
+                paypalEmail: '',
+                bankAccountName: '',
+                bankAccountNumber: '',
+                bankRoutingNumber: '',
+                bankIfscCode: ''
+            });
+        }
+
+        // Generate buffer
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        // Set response headers
+        const filename = `Faculty_Payments_${startOfMonth.toISOString().slice(0, 7)}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        
+        console.log('Sending file:', filename);
+        
+        // Send the file
+        res.send(buffer);
+
+    } catch (error) {
+        console.error('Error generating payment export:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to generate payment report',
+            error: error.message 
+        });
     }
 };

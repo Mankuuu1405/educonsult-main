@@ -49,34 +49,90 @@ const FacultyDashboard = () => {
         }
     }, [location.state]);
     // --- FETCH ALL NECESSARY DATA ONCE ---
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            setLoading(true);
-            try {
-                const userInfo = JSON.parse(localStorage.getItem('facultyInfo'));
-                if (!userInfo) {
-                    setError("Not authorized. Please log in again.");
-                    setLoading(false);
-                    return;
-                }
-                const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                // Fetch bookings and profile details in parallel
-                const bookingsPromise = axiosInstance.get(`/api/bookings/my-faculty-bookings`, config);
-                const profilePromise = axiosInstance.get(`/api/faculty/me/details`, config);
+    // useEffect(() => {
+    //     const fetchInitialData = async () => {
+    //         setLoading(true);
+    //         try {
+    //             const userInfo = JSON.parse(localStorage.getItem('facultyInfo'));
+    //             if (!userInfo) {
+    //                 setError("Not authorized. Please log in again.");
+    //                 setLoading(false);
+    //                 return;
+    //             }
+    //             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+    //             // Fetch bookings and profile details in parallel
+    //             const bookingsPromise = axiosInstance.get(`/api/bookings/my-faculty-bookings`, config);
+    //             const profilePromise = axiosInstance.get(`/api/faculty/me/details`, config);
 
-                const [bookingsRes, profileRes] = await Promise.all([bookingsPromise, profilePromise]);
+    //             const [bookingsRes, profileRes] = await Promise.all([bookingsPromise, profilePromise]);
 
-                setAllBookings(bookingsRes.data);
-                setProfileData(profileRes.data);
-            } catch (error) {
-                console.error("Failed to fetch initial dashboard data:", error);
-                setError(error.response?.data?.message || 'Failed to fetch initial data.');
-            } finally {
+    //             setAllBookings(bookingsRes.data);
+    //             setProfileData(profileRes.data);
+    //         } catch (error) {
+    //             console.error("Failed to fetch initial dashboard data:", error);
+    //             setError(error.response?.data?.message || 'Failed to fetch initial data.');
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     };
+    //     fetchInitialData();
+    // }, [API_URL]);
+
+    // --- FETCH ALL NECESSARY DATA ONCE ---
+useEffect(() => {
+    const fetchInitialData = async () => {
+        setLoading(true);
+        try {
+            const userInfo = JSON.parse(localStorage.getItem('facultyInfo'));
+            if (!userInfo) {
+                setError("Not authorized. Please log in again.");
                 setLoading(false);
+                return;
             }
-        };
-        fetchInitialData();
-    }, [API_URL]);
+            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            
+            // Fetch bookings and profile details in parallel
+            const bookingsPromise = axiosInstance.get(`/api/bookings/my-faculty-bookings`, config);
+            const profilePromise = axiosInstance.get(`/api/faculty/me/details`, config);
+
+            const [bookingsRes, profileRes] = await Promise.all([bookingsPromise, profilePromise]);
+
+            setAllBookings(bookingsRes.data);
+            
+            // ✅ FIXED: Ensure all fields exist with defaults
+            const profileWithDefaults = {
+                fullName: profileRes.data.fullName || '',
+                email: profileRes.data.email || '',
+                title: profileRes.data.title || '',
+                education: profileRes.data.education || '',
+                bio: profileRes.data.bio || '',
+                address: profileRes.data.address || '',  // ✅ NEW
+                contactNumber: profileRes.data.contactNumber || '',  // ✅ NEW
+                expertiseTags: profileRes.data.expertiseTags || [],
+                isAvailable: profileRes.data.isAvailable || false,
+                profileImage: profileRes.data.profileImage || '/default-avatar.png',
+                financials: {
+                    payoutMethod: profileRes.data.financials?.payoutMethod || 'paypal',
+                    paypalEmail: profileRes.data.financials?.paypalEmail || '',
+                    bankAccountName: profileRes.data.financials?.bankAccountName || '',
+                    bankAccountNumber: profileRes.data.financials?.bankAccountNumber || '',
+                    bankRoutingNumber: profileRes.data.financials?.bankRoutingNumber || '',
+                    bankIfscCode: profileRes.data.financials?.bankIfscCode || '',
+                    branchName: profileRes.data.financials?.branchName || '',  // ✅ NEW
+                }
+            };
+            
+            setProfileData(profileWithDefaults);
+            
+        } catch (error) {
+            console.error("Failed to fetch initial dashboard data:", error);
+            setError(error.response?.data?.message || 'Failed to fetch initial data.');
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchInitialData();
+}, [API_URL]);
 
 
     // Animate content on view change
@@ -102,34 +158,75 @@ const FacultyDashboard = () => {
     }, [activeView, activeChatSession, allBookings, getSessionForBooking]);
 
     // --- HANDLE PROFILE SAVE/UPDATE ---
+    // const handleProfileSubmit = async (e) => {
+    //     e.preventDefault();
+
+    //     if (!profileData.expertiseTags || profileData.expertiseTags.length === 0) {
+    //         // alert('Please add at least one area of expertise.');
+    //         addToast('Please add at least one area of expertise.', 'error');
+    //         return;
+    //     }
+    //     try {
+    //         const { token } = JSON.parse(localStorage.getItem('facultyInfo'));
+    //         const config = {
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 Authorization: `Bearer ${token}`,
+    //             },
+    //         };
+
+    //         const { data } = await axiosInstance.put(`/api/faculty/me/details`, profileData, config);
+
+    //         console.log('=== RESPONSE FROM SERVER ===');
+    //     console.log('Updated Data:', JSON.stringify(data, null, 2));
+
+    //         // Update state with confirmed data from server to keep UI in sync
+    //         setProfileData(data);
+
+    //         addToast('Profile updated successfully!', 'success');
+
+    //     } catch (err) {
+    //         addToast('Error: Could not update profile. ' + (err.response?.data?.message || err.message), 'error');
+    //     }
+    // };
+
     const handleProfileSubmit = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        if (!profileData.expertiseTags || profileData.expertiseTags.length === 0) {
-            // alert('Please add at least one area of expertise.');
-            addToast('Please add at least one area of expertise.', 'error');
-            return;
-        }
-        try {
-            const { token } = JSON.parse(localStorage.getItem('facultyInfo'));
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            };
+    if (!profileData.expertiseTags || profileData.expertiseTags.length === 0) {
+        addToast('Please add at least one area of expertise.', 'error');
+        return;
+    }
+    
+    // ✅ ADD DETAILED LOGGING
+    console.log('=== SUBMITTING PROFILE DATA ===');
+    console.log('Address:', profileData.address);
+    console.log('Contact Number:', profileData.contactNumber);
+    console.log('Branch Name:', profileData.financials?.branchName);
+    console.log('Full profileData:', JSON.stringify(profileData, null, 2));
+    
+    try {
+        const { token } = JSON.parse(localStorage.getItem('facultyInfo'));
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        };
 
-            const { data } = await axiosInstance.put(`/api/faculty/me/details`, profileData, config);
+        const { data } = await axiosInstance.put(`/api/faculty/me/details`, profileData, config);
 
-            // Update state with confirmed data from server to keep UI in sync
-            setProfileData(data);
+        console.log('=== RESPONSE FROM SERVER ===');
+        console.log('Updated Data:', JSON.stringify(data, null, 2));
 
-            addToast('Profile updated successfully!', 'success');
+        setProfileData(data);
+        addToast('Profile updated successfully!', 'success');
 
-        } catch (err) {
-            addToast('Error: Could not update profile. ' + (err.response?.data?.message || err.message), 'error');
-        }
-    };
+    } catch (err) {
+        console.error('=== ERROR ===', err);
+        addToast('Error: Could not update profile. ' + (err.response?.data?.message || err.message), 'error');
+    }
+};
 
     // Handler for "Join Chat" button or clicking a chat in the list
     const handleChatSelect = async (booking) => {
