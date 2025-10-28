@@ -6,8 +6,10 @@ import { useNavigate, Link } from 'react-router-dom';
 const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthDropdownOpen, setIsAuthDropdownOpen] = useState(false);
+    const [showTranslate, setShowTranslate] = useState(false);
+    const [cachedTranslate, setCachedTranslate] = useState(null); // 🔹 New state for saved HTML
+    const translateRef = useRef(null);
 
-    // --- NEW: State to hold user info ---
     const [userInfo, setUserInfo] = useState(null);
 
     const authDropdownRef = useRef(null);
@@ -18,7 +20,7 @@ const Navbar = () => {
     const activeLinkIndicatorRef = useRef(null);
     const navigate = useNavigate();
 
-    // --- NEW: Effect to check localStorage on mount ---
+    // --- Load user data from localStorage ---
     useEffect(() => {
         const facultyData = localStorage.getItem('facultyInfo');
         const studentData = localStorage.getItem('studentInfo');
@@ -28,7 +30,80 @@ const Navbar = () => {
         } else if (studentData) {
             setUserInfo(JSON.parse(studentData));
         }
+
+        // 🔹 Load cached translation data if exists
+        const savedTranslate = localStorage.getItem('translateWidget');
+        if (savedTranslate) {
+            setCachedTranslate(savedTranslate);
+        }
     }, []);
+
+    // --- Google Translate Loader with local caching ---
+    useEffect(() => {
+        const loadGoogleTranslate = () => {
+            if (cachedTranslate) {
+                // ✅ Use cached data instead of fetching again
+                const elem = document.getElementById('google_translate_element');
+                if (elem && !elem.innerHTML.trim()) {
+                    elem.innerHTML = cachedTranslate;
+                }
+                return;
+            }
+
+            if (!window.google || !window.google.translate) {
+                // Script not loaded yet
+                const script = document.createElement('script');
+                script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+                document.body.appendChild(script);
+
+                window.googleTranslateElementInit = () => {
+                    new window.google.translate.TranslateElement(
+                        {
+                            pageLanguage: 'en',
+                            includedLanguages:
+                                'en,es,fr,de,zh-CN,ja,ko,ar,ru,it,pt,hi,bn,tr,ta,ml,te',
+                            layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
+                        },
+                        'google_translate_element'
+                    );
+
+                    // Wait for the Google Translate HTML to load before saving
+                    setTimeout(() => {
+                        const elem = document.getElementById('google_translate_element');
+                        if (elem && elem.innerHTML.trim()) {
+                            localStorage.setItem('translateWidget', elem.innerHTML);
+                            setCachedTranslate(elem.innerHTML);
+                        }
+                    }, 1500);
+                };
+            } else {
+                // Already loaded — just recreate the widget
+                new window.google.translate.TranslateElement(
+                    {
+                        pageLanguage: 'en',
+                        includedLanguages:
+                            'en,es,fr,de,zh-CN,ja,ko,ar,ru,it,pt,hi,bn,tr,ta,ml,te',
+                        layout: window.google.translate.TranslateElement.InlineLayout.VERTICAL,
+                    },
+                    'google_translate_element'
+                );
+
+                // Save translation widget once it's available
+                setTimeout(() => {
+                    const elem = document.getElementById('google_translate_element');
+                    if (elem && elem.innerHTML.trim()) {
+                        localStorage.setItem('translateWidget', elem.innerHTML);
+                        setCachedTranslate(elem.innerHTML);
+                    }
+                }, 1500);
+            }
+        };
+
+        if (showTranslate) {
+            const timeout = setTimeout(loadGoogleTranslate, 100);
+            return () => clearTimeout(timeout);
+        }
+    }, [showTranslate]);
 
     // --- GSAP Animations ---
     useEffect(() => {
@@ -56,6 +131,7 @@ const Navbar = () => {
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
+    // --- Active link hover animation ---
     useEffect(() => {
         if (navLinksContainerRef.current) {
             const navLinks = navLinksContainerRef.current.querySelectorAll('a');
@@ -67,18 +143,19 @@ const Navbar = () => {
             };
             const handleLinkLeave = () => {
                 gsap.to(indicator, { opacity: 0, duration: 0.3, ease: 'power3.inOut' });
-            }
+            };
 
-            navLinks.forEach(link => link.addEventListener('mouseenter', handleLinkHover));
+            navLinks.forEach((link) => link.addEventListener('mouseenter', handleLinkHover));
             navLinksContainerRef.current.addEventListener('mouseleave', handleLinkLeave);
 
             return () => {
-                navLinks.forEach(link => link.removeEventListener('mouseenter', handleLinkHover));
+                navLinks.forEach((link) => link.removeEventListener('mouseenter', handleLinkHover));
                 if (navLinksContainerRef.current) navLinksContainerRef.current.removeEventListener('mouseleave', handleLinkLeave);
-            }
+            };
         }
     }, []);
 
+    // --- Handle outside clicks ---
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (authDropdownRef.current && !authDropdownRef.current.contains(event.target)) {
@@ -93,7 +170,7 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isMobileMenuOpen]);
 
-    // --- NEW: Logout Handler ---
+    // --- Logout Handler ---
     const logoutHandler = () => {
         localStorage.removeItem('facultyInfo');
         localStorage.removeItem('studentInfo');
@@ -103,35 +180,32 @@ const Navbar = () => {
         navigate('/');
     };
 
-    // Reusable component for dropdown items that navigate
     const DropdownItem = ({ icon: Icon, text, path }) => (
-        <Link to={path} onClick={() => setIsAuthDropdownOpen(false)}
-            className="flex items-center px-4 py-2.5 text-sm text-text-primary hover:bg-light-bg hover:text-primary transition-all duration-200 ease-in-out rounded-lg">
+        <Link
+            to={path}
+            onClick={() => setIsAuthDropdownOpen(false)}
+            className="flex items-center px-4 py-2.5 text-sm text-text-primary hover:bg-light-bg hover:text-primary transition-all duration-200 ease-in-out rounded-lg"
+        >
             {Icon && <Icon className="mr-3 h-4 w-4 text-text-secondary" />}
             <span className="font-medium">{text}</span>
         </Link>
     );
 
-    // Reusable component for mobile navigation links
     const MobileNavLink = ({ href, children }) => (
-        <Link to={href} onClick={() => setIsMobileMenuOpen(false)}
-            className="block px-4 py-3 text-base font-semibold text-text-primary hover:bg-secondary hover:text-primary transition-colors duration-200 rounded-lg">
+        <Link
+            to={href}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block px-4 py-3 text-base font-semibold text-text-primary hover:bg-secondary hover:text-primary transition-colors duration-200 rounded-lg"
+        >
             {children}
         </Link>
     );
 
-    // --- NEW: Component for the logged-in user view in dropdowns ---
-  const AuthLinks = () => (
+    const AuthLinks = () => (
         <>
-            {userInfo.role === 'admin' && (
-                <DropdownItem icon={LayoutDashboard} text="Admin Dashboard" path="/admin-dashboard" />
-            )}
-            {userInfo.role === 'faculty' && (
-                <DropdownItem icon={User} text="Faculty Dashboard" path="/faculty-dashboard" />
-            )}
-            {userInfo.role === 'student' && (
-                <DropdownItem icon={User} text="Student Dashboard" path="/student-dashboard" />
-            )}
+            {userInfo?.role === 'admin' && <DropdownItem icon={LayoutDashboard} text="Admin Dashboard" path="/admin-dashboard" />}
+            {userInfo?.role === 'faculty' && <DropdownItem icon={User} text="Faculty Dashboard" path="/faculty-dashboard" />}
+            {userInfo?.role === 'student' && <DropdownItem icon={User} text="Student Dashboard" path="/student-dashboard" />}
             <div className="h-px bg-gray-200/80 my-2"></div>
             <button
                 onClick={logoutHandler}
@@ -156,16 +230,17 @@ const Navbar = () => {
     );
 
     return (
-
         <>
             <div ref={magicBgRef} className="fixed top-0 left-0 w-64 h-64 bg-accent/20 rounded-full pointer-events-none -translate-x-1/2 -translate-y-1/2 filter blur-xl opacity-50" />
-            <nav ref={navbarRef} className="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl mx-auto bg-white backdrop-blur-lg shadow-lg rounded-2xl z-50 border border-white opacity-0 -translate-y-16 font-sans">
+            <nav
+                ref={navbarRef}
+                className="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl mx-auto bg-white backdrop-blur-lg shadow-lg rounded-2xl z-50 border border-white opacity-0 -translate-y-16 font-sans"
+            >
                 <div className="container mx-auto flex justify-between items-center p-2">
-                    {/* --- Logo and Nav Links (No changes here) --- */}
-                <Link to="/" className="flex items-center">
+                    <Link to="/" className="flex items-center">
                         <img src="/logo.jpg" alt="CeTutor Logo" className="h-12 md:h-16 w-auto object-contain" />
-                        <span className="ml-2 text-xl md:text-3xl font-bold text-primary tracking-tight font-serif"></span>
                     </Link>
+
                     <div ref={navLinksContainerRef} className="hidden md:flex relative space-x-2 lg:space-x-4 items-center bg-secondary p-1 rounded-full border border-primary">
                         <div ref={activeLinkIndicatorRef} className="absolute h-[80%] bg-white rounded-full top-1/2 -translate-y-1/2 shadow-sm pointer-events-none opacity-0" />
                         <a href="/" className="relative px-4 py-1.5 rounded-full text-sm font-semibold text-text-primary transition-colors hover:text-primary">Home</a>
@@ -175,40 +250,75 @@ const Navbar = () => {
                     </div>
 
                     <div className="flex items-center space-x-3">
-                        {/* --- MODIFIED: Auth Dropdown --- */}
+                        {/* --- Translate Button --- */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowTranslate(!showTranslate)}
+                                className="flex items-center space-x-1 text-sm font-semibold text-text-primary bg-white/50 hover:bg-white/80 border border-gray-200 shadow-sm px-3 py-1.5 rounded-full transition"
+                            >
+                                🌐 <span>Translate</span>
+                            </button>
+
+                            {showTranslate && (
+                                <div
+                                    ref={translateRef}
+                                    className="absolute right-0 mt-3 w-52 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-2xl p-3 z-[9999] animate-fadeIn"
+                                >
+                                    <div id="google_translate_element"></div>
+                                    <button
+                                        onClick={() => setShowTranslate(false)}
+                                        className="mt-3 w-full py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- Auth Dropdown --- */}
                         <div className="relative hidden md:block" ref={authDropdownRef}>
-                            <button onClick={() => setIsAuthDropdownOpen(!isAuthDropdownOpen)}
-                                className=" flex items-center space-x-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 rounded-full p-2.5 transition-all duration-300 bg-white/50 hover:bg-white/80 shadow-sm border border-transparent hover:border-white/20">
+                            <button
+                                onClick={() => setIsAuthDropdownOpen(!isAuthDropdownOpen)}
+                                className="flex items-center space-x-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full p-2.5 transition-all duration-300 bg-white/50 hover:bg-white/80 shadow-sm"
+                            >
                                 <User className="h-5 w-5 text-primary" />
                                 <span className="text-sm font-semibold pr-1">{userInfo ? userInfo.fullName.split(' ')[0] : ''}</span>
                                 <ChevronDown className={`h-4 w-4 text-text-secondary transition-transform duration-300 ${isAuthDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
-                            <div className={`absolute right-0 mt-4 w-64 bg-white border border-gray-200/80 rounded-xl shadow-2xl p-2 origin-top-right transition-all duration-300 ease-in-out ${isAuthDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+                            <div
+                                className={`absolute right-0 mt-4 w-64 bg-white border border-gray-200/80 rounded-xl shadow-2xl p-2 origin-top-right transition-all duration-300 ease-in-out ${
+                                    isAuthDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+                                }`}
+                            >
                                 {userInfo ? <AuthLinks /> : <GuestLinks />}
                             </div>
                         </div>
-                        {/* Mobile Menu Button (No changes) */}
+
+                        {/* --- Mobile Menu Button --- */}
                         <div className="md:hidden">
-                             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                 className=" mobile-menu-button focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full p-2.5 transition-all duration-200 bg-white/50 hover:bg-white/80 shadow-sm">
-                                 <div className={`transition-transform duration-500 ease-in-out ${isMobileMenuOpen ? 'rotate-90' : ''}`}>
-                                     {isMobileMenuOpen ? <X className="h-6 w-6 text-primary" /> : <Menu className="h-6 w-6 text-primary" />}
-                                 </div>
-                             </button>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="mobile-menu-button focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full p-2.5 transition-all duration-200 bg-white/50 hover:bg-white/80 shadow-sm"
+                            >
+                                <div className={`transition-transform duration-500 ease-in-out ${isMobileMenuOpen ? 'rotate-90' : ''}`}>
+                                    {isMobileMenuOpen ? <X className="h-6 w-6 text-primary" /> : <Menu className="h-6 w-6 text-primary" />}
+                                </div>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                {/* --- MODIFIED: Mobile Menu --- */}
-                <div ref={mobileMenuRef} className={`md:hidden overflow-hidden transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'max-h-[600px] py-4 px-2' : 'max-h-0'}`}>
+                {/* --- Mobile Menu --- */}
+                <div
+                    ref={mobileMenuRef}
+                    className={`md:hidden overflow-hidden transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'max-h-[600px] py-4 px-2' : 'max-h-0'}`}
+                >
                     <div className="flex flex-col space-y-2">
                         <MobileNavLink href="/">Home</MobileNavLink>
                         <MobileNavLink href="/browse">Listings</MobileNavLink>
                         <MobileNavLink href="/pricing">Pricing</MobileNavLink>
                         <MobileNavLink href="/support">Support</MobileNavLink>
-
                         <div className="h-px bg-gray-200/80 my-3"></div>
-
                         {userInfo ? (
                             <div className="px-2">
                                 <div className="px-2 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">My Account</div>
