@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import SidebarA from '../components/AdminDashboard/SidebarA';
 import MainContentA from '../components/AdminDashboard/MainContentA';
 import FacultyManagement from '../components/AdminDashboard/FacultyManagement';
-import WithdrawalRequests from '../components/AdminDashboard/WithdrawalRequests';
+import StudentManagement from '../components/AdminDashboard/StudentManagement';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/solid';
 
 const AdminDashboard = () => {
@@ -17,8 +17,8 @@ const AdminDashboard = () => {
         return <MainContentA />;
       case 'faculty':
         return <FacultyManagement />;
-      case 'withdrawals':
-        return <WithdrawalRequests />
+      case 'Student':
+        return <StudentManagement />
       default:
         return <MainContentA />;
     }

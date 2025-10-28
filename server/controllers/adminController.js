@@ -238,178 +238,41 @@ export const updateSettings = async (req, res) => {
     }
 };
 
+//studne Info
+export const getStudentList = async (req, res) => {
+  try {
+    // Find all students and select the fields you want to return
+    const students = await Student.find({}, 'fullName email isVerified createdAt');
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error: ' + error.message });
+  }
+};
 
-// export const exportPayments = async (req, res) => {
-//     try {
-//         console.log('Export payments requested by:', req.user.email);
-        
-//         // 1. Get platform fee percentage from settings
-//         const settings = await Setting.findOne();
-//         const platformFeePercentage = settings?.platformFeePercentage || 30;
-//         const payoutDate = settings?.payoutDate;
 
-//         // 2. Get all completed bookings for this month
-//         const startOfMonth = new Date();
-//         startOfMonth.setDate(1);
-//         startOfMonth.setHours(0, 0, 0, 0);
+//delete Student
 
-//         const endOfMonth = new Date();
-//         endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-//         endOfMonth.setDate(0);
-//         endOfMonth.setHours(23, 59, 59, 999);
 
-//         console.log('Fetching bookings from', startOfMonth.toLocaleDateString(), 'to', endOfMonth.toLocaleDateString());
+export const deleteStudent = async (req, res) => {
+  const studentId = req.params._id;
 
-//         const bookings = await Booking.find({
-//             status: 'completed',
-//             paymentStatus: 'successful',
-//             createdAt: { $gte: startOfMonth, $lte: endOfMonth }
-//         }).populate('faculty');
+  try {
+    const student = await Student.findById(studentId);
 
-//         console.log('Found', bookings.length, 'completed bookings');
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found.' });
+    }
 
-//         // 3. Group bookings by faculty and calculate totals
-//         const facultyPayments = {};
+    await Student.deleteOne({ _id: studentId });
 
-//         for (const booking of bookings) {
-//             const facultyId = booking.faculty._id.toString();
-            
-//             if (!facultyPayments[facultyId]) {
-//                 facultyPayments[facultyId] = {
-//                     facultyId: facultyId,
-//                     facultyName: booking.faculty.fullName,
-//                     email: booking.faculty.email,
-//                     totalRevenue: 0,
-//                     platformFee: 0,
-//                     payoutAmount: 0,
-//                     bookingCount: 0,
-//                     currency: booking.currencyAtBooking
-//                 };
-//             }
+    // Optional: You could also clean up related data, like bookings made by this student.
+    // await Booking.deleteMany({ student: studentId });
 
-//             // Calculate payment after platform fee
-//             const revenueAmount = booking.priceAtBooking;
-//             const feeAmount = (revenueAmount * platformFeePercentage) / 100;
-//             const payoutAmount = revenueAmount - feeAmount;
-
-//             facultyPayments[facultyId].totalRevenue += revenueAmount;
-//             facultyPayments[facultyId].platformFee += feeAmount;
-//             facultyPayments[facultyId].payoutAmount += payoutAmount;
-//             facultyPayments[facultyId].bookingCount += 1;
-//         }
-
-//         console.log('Processed payments for', Object.keys(facultyPayments).length, 'faculty members');
-
-//         // 4. Fetch faculty financial details
-//         const facultyIds = Object.keys(facultyPayments);
-//         const facultyDetails = await FacultyDetail.find({
-//             faculty: { $in: facultyIds }
-//         });
-
-//         // Create a map for quick lookup
-//         const detailsMap = {};
-//         facultyDetails.forEach(detail => {
-//             detailsMap[detail.faculty.toString()] = detail;
-//         });
-
-//         // 5. Create Excel workbook
-//         const workbook = new ExcelJS.Workbook();
-//         const worksheet = workbook.addWorksheet('Faculty Payments');
-
-//         worksheet.getCell('A1').value = 'Monthly Faculty Payment Report';
-//         worksheet.getCell('A1').font = { size: 16, bold: true };
-
-//         // Define columns
-//         worksheet.columns = [
-//             { header: 'Faculty Name', key: 'name', width: 25 },
-//             { header: 'Email', key: 'email', width: 30 },
-//             { header: 'Contact Number', key: 'contactNumber', width: 15 },
-//             { header: 'Address', key: 'address', width: 40 },
-//             { header: 'Branch Name', key: 'branchName', width: 20 },
-//             { header: 'Bookings Count', key: 'bookingCount', width: 15 },
-//             { header: 'Payout Amount', key: 'payoutAmount', width: 15 },
-//             { header: 'Currency', key: 'currency', width: 10 },
-//             { header: 'Payout Method', key: 'payoutMethod', width: 15 },
-//             { header: 'PayPal Email', key: 'paypalEmail', width: 30 },
-//             { header: 'Bank Account Name', key: 'bankAccountName', width: 25 },
-//             { header: 'Bank Account Number', key: 'bankAccountNumber', width: 20 },
-//             { header: 'Bank Routing Number', key: 'bankRoutingNumber', width: 20 },
-//             { header: 'Bank IFSC Code', key: 'bankIfscCode', width: 15 }
-//         ];
-
-//         // Style header row
-//         const headerRow = worksheet.getRow(6);
-//         headerRow.font = { bold: true };
-//         headerRow.fill = {
-//             type: 'pattern',
-//             pattern: 'solid',
-//             fgColor: { argb: 'FFE0E0E0' }
-//         };
-
-//         // Add data rows
-//         for (const [facultyId, payment] of Object.entries(facultyPayments)) {
-//             const details = detailsMap[facultyId];
-            
-//             worksheet.addRow({
-//                 name: payment.facultyName,
-//                 email: payment.email,
-//                 contactNumber: details?.contactNumber || 'N/A',
-//                 address: details?.address || 'N/A',
-//                 branchName: details?.branchName || 'N/A',
-//                 bookingCount: payment.bookingCount,
-//                 payoutAmount: payment.payoutAmount.toFixed(2),
-//                 currency: payment.currency,
-//                 payoutMethod: details?.financials?.payoutMethod || 'Not Set',
-//                 paypalEmail: details?.financials?.paypalEmail || 'N/A',
-//                 bankAccountName: details?.financials?.bankAccountName || 'N/A',
-//                 bankAccountNumber: details?.financials?.bankAccountNumber || 'N/A',
-//                 bankRoutingNumber: details?.financials?.bankRoutingNumber || 'N/A',
-//                 bankIfscCode: details?.financials?.bankIfscCode || 'N/A'
-//             });
-//         }
-
-//         if (Object.keys(facultyPayments).length === 0) {
-//             // Add a message if no payments
-//             worksheet.addRow({
-//                 name: 'No completed bookings for this month',
-//                 email: '',
-//                 bookingCount: '',
-//                 totalRevenue: '',
-//                 platformFee: '',
-//                 payoutAmount: '',
-//                 currency: '',
-//                 payoutMethod: '',
-//                 paypalEmail: '',
-//                 bankAccountName: '',
-//                 bankAccountNumber: '',
-//                 bankRoutingNumber: '',
-//                 bankIfscCode: ''
-//             });
-//         }
-
-//         // Generate buffer
-//         const buffer = await workbook.xlsx.writeBuffer();
-
-//         // Set response headers
-//         const filename = `Faculty_Payments_${startOfMonth.toISOString().slice(0, 7)}.xlsx`;
-//         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-//         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        
-//         console.log('Sending file:', filename);
-        
-//         // Send the file
-//         res.send(buffer);
-
-//     } catch (error) {
-//         console.error('Error generating payment export:', error);
-//         res.status(500).json({ 
-//             success: false, 
-//             message: 'Failed to generate payment report',
-//             error: error.message 
-//         });
-//     }
-// };
-
+    res.status(200).json({ message: 'Student deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error: ' + error.message });
+  }
+};
 
 export const exportPayments = async (req, res) => {
     try {

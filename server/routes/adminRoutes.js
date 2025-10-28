@@ -9,6 +9,8 @@ import {
   getSettings,
   updateSettings,
   exportPayments,
+  getStudentList,
+  deleteStudent
 } from "../controllers/adminController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
@@ -31,5 +33,8 @@ router.put("/faculty/:id", updateFaculty);
 router.get("/settings/platform-fee", getSettings);
 router.put("/settings/platform-fee", updateSettings);
 router.get("/export-payments", exportPayments);
+//Student Info
+router.get("/students", getStudentList);
+router.delete("/students/:_id", deleteStudent);
 
 export default router;
