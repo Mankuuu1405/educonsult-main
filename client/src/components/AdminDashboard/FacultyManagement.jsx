@@ -191,11 +191,11 @@ const FacultyManagement = () => {
           <h1 className="text-2xl font-bold text-admin-900">Faculty Management</h1>
           <p className="text-admin-600">Manage faculty members and their services</p>
         </div>
-        <div className="flex items-center space-x-3">
+        {/* <div className="flex items-center space-x-3">
           <button onClick={()=>navigate('/edit-profile-f')} className="admin-button-primary">
             Add New Faculty
           </button>
-        </div>  
+        </div>   */}
       </div>
 
       {/* Search and Filter */}
@@ -214,7 +214,7 @@ const FacultyManagement = () => {
             />
           </div>
           
-          <div className="flex items-center space-x-3">
+          {/* <div className="flex items-center space-x-3">
             <button className="admin-button-secondary">
               <FunnelIcon className="h-4 w-4 mr-2" />
               Filter
@@ -225,7 +225,7 @@ const FacultyManagement = () => {
               <option>Inactive</option>
               <option>Suspended</option>
             </select>
-          </div>
+          </div> */}
         </div>
       </div>
 
