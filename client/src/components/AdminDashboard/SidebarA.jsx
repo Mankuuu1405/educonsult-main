@@ -16,7 +16,7 @@ const SidebarA = ({ activeView, onNavigate }) => {
   const navLinks = [
     { view: 'dashboard', icon: LayoutDashboard, text: 'Overview' },
     { view: 'faculty', icon: Users, text: 'Faculty Management' },
-    // { view: 'withdrawals', icon: Landmark, text: 'Withdrawal Requests' }, // <-- NEW LINK ADDED HERE
+    { view: 'Student', icon: Users, text: 'Student Management' }, // <-- NEW LINK ADDED HERE
   ];
     const handleLogout = () => {
     localStorage.removeItem('facultyInfo');
