@@ -431,7 +431,7 @@ const MainContentA = () => {
             <div className="admin-card">
                 <h3 className="text-lg font-semibold text-admin-900 mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button className="admin-button-primary p-4 text-left">
+                    {/* <button className="admin-button-primary p-4 text-left">
                         <div className="flex items-center space-x-3">
                             <UsersIcon className="h-6 w-6" />
                             <div>
@@ -439,7 +439,7 @@ const MainContentA = () => {
                                 <p className="text-sm opacity-90">View and manage faculty members</p>
                             </div>
                         </div>
-                    </button>
+                    </button> */}
 
                     <button onClick={() => setIsSettingsModalOpen(true)} className="admin-button-secondary p-4 text-left">
                         <div className="flex items-center space-x-3">

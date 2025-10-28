@@ -100,7 +100,7 @@ const MainContentF = () => {
                 })}
                 <StatCard icon={BookCheck} title="Completed Chats" value={stats.completedChats} />
                 <StatCard icon={Users} title="Unique Students" value={stats.uniqueStudents} />
-                <StatCard icon={Star} title="Average Rating" value={`${stats.averageRating} / 5.0`} />
+                {/* <StatCard icon={Star} title="Average Rating" value={`${stats.averageRating} / 5.0`} /> */}
             </div>
             <div className="mb-10">
                 <WalletBalanceCard walletData={stats.availableToWithdraw} />

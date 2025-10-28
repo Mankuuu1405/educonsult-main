@@ -285,13 +285,13 @@ const FacultyManagement = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    {/* <div>
                         <p className="text-sm text-admin-600">Rating</p>
                         <div className="flex items-center">
                             <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
                             <span className="font-semibold">4</span>
                         </div>
-                    </div>
+                    </div> */}
                     <div>
                         <p className="text-sm text-admin-600">title</p>
                         <p className="font-semibold">{facultyMember.title}</p>
