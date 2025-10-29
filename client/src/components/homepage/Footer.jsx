@@ -79,9 +79,9 @@ const Footer = () => {
                         &copy; {new Date().getFullYear()} CeTutor. All Rights Reserved.
                     </p>
                     <div className="flex space-x-4 order-1">
-                        <a href="#" aria-label="Twitter" className="text-text-on-dark/50 hover:text-primary transition-colors">
+                        {/* <a href="#" aria-label="Twitter" className="text-text-on-dark/50 hover:text-primary transition-colors">
                             <Twitter className="w-5 h-5" />
-                        </a>
+                        </a> */}
                         <a href="https://www.facebook.com/profile.php?id=61582072363492" aria-label="Facebook" className="text-text-on-dark/50 hover:text-primary transition-colors">
                             <FacebookIcon className="w-5 h-5" />
                         </a>
